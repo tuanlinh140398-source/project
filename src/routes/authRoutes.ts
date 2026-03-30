@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { generateToken, refreshToken } from '../controllers/authController';
 
-const router = Router();
+const router = new Hono();
 
 router.post('/token', generateToken);
 router.post('/refresh', refreshToken);

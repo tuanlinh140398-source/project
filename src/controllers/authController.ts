@@ -1,31 +1,28 @@
-import type { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import type { Context } from 'hono';
+import { sign, verify } from 'hono/jwt';
 import crypto from 'crypto';
 import { successResponse, errorResponse, badRequestResponse } from '../helpers/response';
 import logger from '../helpers/logger';
 
-
-export const generateToken = async (req: Request, res: Response) => {
-  const { client_id, client_secret } = req.body;
-
+export const generateToken = async (c: Context) => {
   try {
+    const { client_id, client_secret } = await c.req.json();
+
     if (client_id !== process.env.CLIENT_ID || client_secret !== process.env.CLIENT_SECRET) {
       logger.warn(`Invalid credentials: ${client_id}`);
-      return badRequestResponse(res, 'Invalid credentials');
+      return badRequestResponse(c, 'Invalid credentials');
     }
 
-    const accessToken = jwt.sign(
-      { client_id, jti: crypto.randomUUID() },
-      process.env.JWT_SECRET as string,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1h', algorithm: 'HS512' }
+    const accessToken = await sign(
+      { client_id, jti: crypto.randomUUID(), exp: Math.floor(Date.now() / 1000) + 60 * 60 },
+      process.env.JWT_SECRET as string, 'HS256'
     );
-    const refreshToken = jwt.sign(
-      { client_id, jti: crypto.randomUUID() },
-      process.env.JWT_REFRESH_SECRET as string,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d', algorithm: 'HS512' }
+    const refreshToken = await sign(
+      { client_id, jti: crypto.randomUUID(), exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 },
+      process.env.JWT_REFRESH_SECRET as string, 'HS256'
     );
 
-    successResponse(res, {
+    return successResponse(c, {
       access_token: accessToken,
       refresh_token: refreshToken,
       token_type: 'Bearer',
@@ -33,30 +30,29 @@ export const generateToken = async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    errorResponse(res, error);
+    return errorResponse(c, error);
   }
 };
 
-export const refreshToken = async (req: Request, res: Response) => {
-  const { refresh_token } = req.body;
-
+export const refreshToken = async (c: Context) => {
   try {
+    const { refresh_token } = await c.req.json();
+
     if (!refresh_token) {
-      return badRequestResponse(res, 'Refresh token is required');
+      return badRequestResponse(c, 'Refresh token is required');
     }
 
-    const decoded = jwt.verify(
+    const decoded = await verify(
       refresh_token,
       process.env.JWT_REFRESH_SECRET as string
     ) as { client_id: string };
 
-    const accessToken = jwt.sign(
-      { client_id: decoded.client_id, jti: crypto.randomUUID() },
-      process.env.JWT_SECRET as string,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1h', algorithm: 'HS512' }
+    const accessToken = await sign(
+      { client_id: decoded.client_id, jti: crypto.randomUUID(), exp: Math.floor(Date.now() / 1000) + 60 * 60 },
+      process.env.JWT_SECRET as string, 'HS256'
     );
 
-    successResponse(res, {
+    return successResponse(c, {
       access_token: accessToken,
       token_type: 'Bearer',
       expires_in: process.env.JWT_EXPIRES_IN || '1h'
@@ -64,6 +60,6 @@ export const refreshToken = async (req: Request, res: Response) => {
 
   } catch (error) {
     logger.warn('Invalid or expired refresh token');
-    return res.status(403).json({ message: 'Refresh token invalid or expired' });
+    return c.json({ message: 'Refresh token invalid or expired' }, 403);
   }
 };

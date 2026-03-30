@@ -1,21 +1,21 @@
-import type { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import type { Context, Next } from 'hono';
+import { verify } from 'hono/jwt';
 import logger from '../helpers/logger';
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
+export const authMiddleware = async (c: Context, next: Next) => {
+  const authHeader = c.req.header('authorization');
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     logger.warn('No token provided');
-    return res.status(401).json({ message: 'Unauthorized' });
+    return c.json({ message: 'Unauthorized' }, 401);
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    next();
+    await verify(token, process.env.JWT_SECRET as string, 'HS256');
+    await next();
   } catch (error) {
     logger.warn('Invalid or expired token');
-    return res.status(403).json({ message: 'Forbidden' });
+    return c.json({ message: 'Forbidden' }, 403);
   }
 };

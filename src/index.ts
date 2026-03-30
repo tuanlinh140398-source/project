@@ -1,25 +1,24 @@
-import express from 'express';
+import { Hono } from 'hono';
+import { logger as honoLogger } from 'hono/logger';
 import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes';
-import logger from './helpers/logger';
 import authRoutes from './routes/authRoutes';
+import logger from './helpers/logger';
 
 dotenv.config();
 
-const app = express();
+const app = new Hono();
 
-app.use(express.json());
+app.use('*', honoLogger());
 
-app.use('/auth', authRoutes);
-
-app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url}`);
-  next();
+app.use('*', async (c, next) => {
+  logger.info(`${c.req.method} ${c.req.url}`);
+  await next();
 });
 
-app.use('/api', userRoutes);
+app.route('/auth', authRoutes);
+app.route('/api', userRoutes);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  logger.info(`Server đang chạy tại http://localhost:${PORT}`);
-});
+
+
+export default app;
