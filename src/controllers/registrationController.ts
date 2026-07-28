@@ -1,51 +1,27 @@
 import { Request, Response } from 'express';
 import { CloudflareEnv, RegistrationResponse, Registration } from '../types/index.js';
 import { RegistrationService } from '../services/registrationService.js';
+import { ErrorHandler } from '../errors/errorHandler.js';
+import { AppError } from '../errors/AppError.js';
+import { ERROR_MESSAGES } from '../constants/messages.js';
 
 export class RegistrationController {
   static async register(req: Request & { env?: CloudflareEnv }, res: Response): Promise<void> {
     try {
       const env = req.env;
       if (!env || !env.DB) {
-        res.status(500).json({
-          success: false,
-          error: 'Database connection not available'
-        });
-        return;
+        throw new AppError(500, ERROR_MESSAGES.DATABASE_CONNECTION_NOT_AVAILABLE);
       }
 
       const service = new RegistrationService(env.DB);
-      const result = await service.register(req.body);
-
-      if (!result.success) {
-        if (result.errors) {
-          res.status(400).json({
-            success: false,
-            errors: result.errors
-          });
-        } else if (result.error === 'Employee code already registered') {
-          res.status(409).json({
-            success: false,
-            error: result.error
-          });
-        } else {
-          res.status(400).json({
-            success: false,
-            error: result.error
-          });
-        }
-        return;
-      }
+      const data = await service.register(req.body);
 
       res.status(201).json({
         success: true,
-        data: result.data
+        data
       });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error'
-      });
+      ErrorHandler.handle(error, res);
     }
   }
 
@@ -53,25 +29,13 @@ export class RegistrationController {
     try {
       const env = req.env;
       if (!env || !env.DB) {
-        res.status(500).json({
-          success: false,
-          error: 'Database connection not available'
-        });
-        return;
+        throw new AppError(500, ERROR_MESSAGES.DATABASE_CONNECTION_NOT_AVAILABLE);
       }
 
       const service = new RegistrationService(env.DB);
-      const result = await service.getAll();
+      const registrations = await service.getAll();
 
-      if (!result.success) {
-        res.status(500).json({
-          success: false,
-          error: result.error
-        });
-        return;
-      }
-
-      const response: RegistrationResponse[] = (result.data || []).map((reg: Registration) => ({
+      const response: RegistrationResponse[] = registrations.map((reg: Registration) => ({
         id: reg.id,
         fullName: reg.fullName,
         employeeCode: reg.employeeCode,
@@ -82,10 +46,7 @@ export class RegistrationController {
 
       res.status(200).json(response);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error'
-      });
+      ErrorHandler.handle(error, res);
     }
   }
 }

@@ -22,6 +22,10 @@ export class RegistrationValidator {
       errors.push({ field: 'fullName', message: 'Full name must be at least 2 characters' });
     } else if (fullName.length > 255) {
       errors.push({ field: 'fullName', message: 'Full name must not exceed 255 characters' });
+    } else if (!this.isValidFullName(fullName)) {
+      errors.push({ field: 'fullName', message: 'Full name must contain only letters, spaces, and hyphens' });
+    } else if (!this.hasAtLeastTwoWords(fullName)) {
+      errors.push({ field: 'fullName', message: 'Full name must contain at least 2 words' });
     }
 
     // Validate employeeCode
@@ -32,6 +36,8 @@ export class RegistrationValidator {
       errors.push({ field: 'employeeCode', message: 'Employee code must be at least 3 characters' });
     } else if (employeeCode.length > 50) {
       errors.push({ field: 'employeeCode', message: 'Employee code must not exceed 50 characters' });
+    } else if (!this.isValidEmployeeCodeFormat(employeeCode)) {
+      errors.push({ field: 'employeeCode', message: 'Employee code format is invalid. Expected format: letters followed by digits (e.g., VT001234)' });
     }
 
     // Validate department
@@ -72,10 +78,28 @@ export class RegistrationValidator {
     return phoneRegex.test(phoneNumber.replace(/\s/g, ''));
   }
 
+  static isValidFullName(fullName: string): boolean {
+    // Allow only Vietnamese letters, spaces, and hyphens
+    // Vietnamese letters include a-z, à-ỿ with diacritics
+    const nameRegex = /^[a-zA-Zàáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ\s\-]+$/;
+    return nameRegex.test(fullName);
+  }
+
+  static hasAtLeastTwoWords(fullName: string): boolean {
+    const words = fullName.trim().split(/\s+/);
+    return words.length >= 2;
+  }
+
+  static isValidEmployeeCodeFormat(employeeCode: string): boolean {
+    // Employee code format: letters followed by digits (e.g., VT001234)
+    const codeRegex = /^[a-zA-Z]+\d+$/;
+    return codeRegex.test(employeeCode);
+  }
+
   static sanitizeRequest(data: any): RegistrationRequest {
     return {
       fullName: this.trimField(data.fullName),
-      employeeCode: this.trimField(data.employeeCode),
+      employeeCode: this.trimField(data.employeeCode).toUpperCase(),
       department: this.trimField(data.department),
       phoneNumber: this.trimField(data.phoneNumber)
     };

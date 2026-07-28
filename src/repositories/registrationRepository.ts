@@ -38,7 +38,20 @@ export class RegistrationRepository {
   async findByEmployeeCode(employeeCode: string): Promise<Registration | null> {
     const result = await this.db
       .prepare('SELECT * FROM registrations WHERE employee_code = ?')
-      .bind(employeeCode)
+      .bind(employeeCode.toUpperCase())
+      .first();
+
+    if (!result) {
+      return null;
+    }
+
+    return this.mapRow(result);
+  }
+
+  async findByPhoneNumber(phoneNumber: string): Promise<Registration | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM registrations WHERE phone_number = ?')
+      .bind(phoneNumber)
       .first();
 
     if (!result) {
