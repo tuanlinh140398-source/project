@@ -1,0 +1,35 @@
+{
+  "name": "course-registration-api",
+  "type": "service",
+  "main": "dist/index.js",
+  "compatibility_date": "2024-01-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "course-registration-db",
+      "database_id": "YOUR_DATABASE_ID"
+    }
+  ],
+  "env": {
+    "production": {
+      "name": "course-registration-api-prod",
+      "route": "https://api.example.com/*",
+      "zone_id": "YOUR_ZONE_ID",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "course-registration-db",
+          "database_id": "YOUR_DATABASE_ID"
+        }
+      ]
+    },
+    "development": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "course-registration-db-dev"
+        }
+      ]
+    }
+  }
+}

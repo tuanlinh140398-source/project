@@ -1,24 +1,46 @@
-import { Hono } from 'hono';
-import { logger as honoLogger } from 'hono/logger';
-import dotenv from 'dotenv';
-import userRoutes from './routes/userRoutes';
-import authRoutes from './routes/authRoutes';
-import logger from './helpers/logger';
+import express, { Request, Response, NextFunction } from 'express';
+import { CloudflareEnv } from './types/index.js';
+import { createRegistrationRouter } from './routes/registrationRoutes.js';
 
-dotenv.config();
+const app = express();
 
-const app = new Hono();
+// Middleware
+app.use(express.json());
 
-app.use('*', honoLogger());
-
-app.use('*', async (c, next) => {
-  logger.info(`${c.req.method} ${c.req.url}`);
-  await next();
+// Request logging middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
 });
 
-app.route('/auth', authRoutes);
-app.route('/api', userRoutes);
+// Error handling middleware for JSON parsing
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof SyntaxError && 'body' in err) {
+    res.status(400).json({
+      success: false,
+      error: 'Invalid JSON in request body'
+    });
+  } else {
+    next();
+  }
+});
 
+// API Routes
+const apiRouter = express.Router();
+apiRouter.use('/api', createRegistrationRouter());
+app.use(apiRouter);
 
+// Health check
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok' });
+});
+
+// 404 handler
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    error: 'Not found'
+  });
+});
 
 export default app;

@@ -1,21 +1,31 @@
-# dev
-.yarn/
-!.yarn/releases
-.vscode/*
-!.vscode/launch.json
-!.vscode/*.code-snippets
-.idea/workspace.xml
-.idea/usage.statistics.xml
-.idea/shelf
-
-# deps
+# Dependencies
 node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-# env
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
 .env
+.env.local
+.env.*.local
 .env.production
 
-# logs
+# IDE
+.vscode/
+!.vscode/launch.json
+!.vscode/*.code-snippets
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
 logs/
 *.log
 npm-debug.log*
@@ -24,5 +34,14 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# misc
+# Cloudflare
+.wrangler/
+wrangler.toml.local
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+temp/
