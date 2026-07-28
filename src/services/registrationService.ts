@@ -12,7 +12,7 @@ export class RegistrationService {
   }
 
   async register(data: any): Promise<Registration> {
-    // Validate input with Zod
+    // Data is already validated by middleware, but we parse again as safety measure
     const validatedData = registrationSchema.parse(data);
 
     // Check if employee code already exists (case-insensitive)

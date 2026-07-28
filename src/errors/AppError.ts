@@ -1,3 +1,5 @@
+import { HTTP_STATUS } from '../constants/httpStatus.js';
+
 export interface ValidationErrorDetail {
   field: string;
   message: string;
@@ -16,28 +18,28 @@ export class AppError extends Error {
 
 export class ValidationError extends AppError {
   constructor(details: ValidationErrorDetail[]) {
-    super(400, 'Validation failed', details);
+    super(HTTP_STATUS.BAD_REQUEST, 'Validation failed', details);
     this.name = 'ValidationError';
   }
 }
 
 export class ConflictError extends AppError {
   constructor(message: string) {
-    super(409, message);
+    super(HTTP_STATUS.CONFLICT, message);
     this.name = 'ConflictError';
   }
 }
 
 export class DatabaseError extends AppError {
   constructor(message: string) {
-    super(500, message);
+    super(HTTP_STATUS.INTERNAL_SERVER_ERROR, message);
     this.name = 'DatabaseError';
   }
 }
 
 export class NotFoundError extends AppError {
   constructor(message: string) {
-    super(404, message);
+    super(HTTP_STATUS.NOT_FOUND, message);
     this.name = 'NotFoundError';
   }
 }

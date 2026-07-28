@@ -1,5 +1,6 @@
 import { D1Database, Registration, RegistrationRequest } from '../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
+import { Logger } from '../utils/logger.js';
 
 export class RegistrationRepository {
   constructor(private db: D1Database) {}
@@ -8,6 +9,8 @@ export class RegistrationRepository {
     const id = uuidv4();
     const now = new Date();
     const createdAt = now.toISOString();
+
+    Logger.debug('Creating registration', { id, employeeCode: data.employeeCode });
 
     await this.db
       .prepare(
@@ -24,6 +27,8 @@ export class RegistrationRepository {
         now.toLocaleDateString('vi-VN')
       )
       .run();
+
+    Logger.debug('Registration created', { id });
 
     return {
       id,

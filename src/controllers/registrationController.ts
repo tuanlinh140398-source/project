@@ -3,23 +3,24 @@ import { CloudflareEnv, RegistrationResponse, Registration } from '../types/inde
 import { RegistrationService } from '../services/registrationService.js';
 import { ErrorHandler } from '../errors/errorHandler.js';
 import { AppError } from '../errors/AppError.js';
+import { ResponseWrapper } from '../utils/responseWrapper.js';
+import { Logger } from '../utils/logger.js';
 import { ERROR_MESSAGES } from '../constants/messages.js';
+import { HTTP_STATUS } from '../constants/httpStatus.js';
 
 export class RegistrationController {
   static async register(req: Request & { env?: CloudflareEnv }, res: Response): Promise<void> {
     try {
       const env = req.env;
       if (!env || !env.DB) {
-        throw new AppError(500, ERROR_MESSAGES.DATABASE_CONNECTION_NOT_AVAILABLE);
+        throw new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_MESSAGES.DATABASE_CONNECTION_NOT_AVAILABLE);
       }
 
       const service = new RegistrationService(env.DB);
       const data = await service.register(req.body);
 
-      res.status(201).json({
-        success: true,
-        data
-      });
+      Logger.info('Registration created', { employeeCode: data.employeeCode });
+      ResponseWrapper.success(res, data, HTTP_STATUS.CREATED);
     } catch (error) {
       ErrorHandler.handle(error, res);
     }
@@ -29,7 +30,7 @@ export class RegistrationController {
     try {
       const env = req.env;
       if (!env || !env.DB) {
-        throw new AppError(500, ERROR_MESSAGES.DATABASE_CONNECTION_NOT_AVAILABLE);
+        throw new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_MESSAGES.DATABASE_CONNECTION_NOT_AVAILABLE);
       }
 
       const service = new RegistrationService(env.DB);
@@ -44,7 +45,8 @@ export class RegistrationController {
         created: new Date(reg.createdAt).toLocaleDateString('vi-VN')
       }));
 
-      res.status(200).json(response);
+      Logger.info('Fetched registrations', { count: response.length });
+      ResponseWrapper.success(res, response, HTTP_STATUS.OK);
     } catch (error) {
       ErrorHandler.handle(error, res);
     }
